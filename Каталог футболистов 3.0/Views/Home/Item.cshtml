@@ -1,0 +1,148 @@
+﻿@using Каталог_футболистов_3._0.Models
+@model Footballers
+@{
+    if (ViewBag.TypePage == "New")
+    {
+        ViewData["Title"] = "Новый футболист";
+    }
+    else
+    {
+        ViewData["Title"] = "Футболист " + Model.FirstName + " " + Model.LastName
+            ;
+    }
+}
+<main>
+    <h1>@ViewData["Title"]</h1>
+    <div class="container pt-5">
+        <form role="form" id="formPerson">
+
+            <div class="form-row mb-3">
+                <div class="col-3">Пол футболиста:</div>
+                <div class="col-9">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <input type="radio" id="male" name="Gender" value="Мужской" @(Model != null ? (Model.Gender == "Мужской" ? "checked" : "") : "checked" )>
+                            <label for="male">Мужской</label>
+                        </div>
+                        <div class="col-md-3">
+                            <input type="radio" id="female" name="Gender" value="Женский" @(Model != null ? (Model.Gender == "Женский" ? "checked" : "") : "" )>
+                            <label for="female">Женский</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="form-row mb-3">
+                <div class="col-md-6">
+                    <label for="FirstName" class="md-2 mr-sm-2">Имя</label>
+                    <input type="text" class="form-control mb-2 mr-sm-2" id="FirstName" placeholder="Иван" value="@(Model != null ? Model.FirstName : "")" required>
+                </div>
+                <div class="col-md-6">
+                    <label for="LastName" class="mb-2 mr-sm-2">Фамилия</label>
+                    <input type="text" class="form-control mb-2 mr-sm-2" id="LastName" placeholder="Иванов" value="@(Model != null ? Model.LastName :"")" required>
+                </div>
+            </div>
+            <div class="form-row mb-3">
+                <div class="col-md-6">
+                    <label for="BirthDate" class="md-2 mr-sm-2">Дата рождения</label>
+                    <input type="date" class="form-control mb-2 mr-sm-2" id="BirthDate" value="@(Model != null ? Model.BirthDate.ToString("yyyy-MM-dd") :"")" required>
+                </div>
+                <div class="col-md-6">
+                    <label for="Country" class="mb-2 mr-sm-2">Страна</label>
+                    <select class="form-control" id="Country">
+                        <option value="" selected disabled>Выберите страну</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-row mb-3">
+                <div class="col-md-6">
+                    <label for="SelectTeam" class="mb-2 mr-sm-2">Команда</label>
+                    <select class="form-control" id="SelectTeam">
+                        <option value="" selected disabled>Выберите команду</option>
+                        <option value="none">Нет подходящей команды</option>
+                    </select>
+                </div>
+                <div class="col-md-6" style="display:none" id="NewTeam">
+                    <label for="Team" class="md-2 mr-sm-2">Команда</label>
+                    <input type="text" class="form-control mb-2 mr-sm-2" id="Team" placeholder="Спартак">
+                </div>
+            </div>
+            <input hidden id="ValueCountry" value="@(Model != null ? Model.Country :"")" />
+            <input hidden id="ValueTeam" value="@(Model != null ? Model.NameTeam :"")" />
+            <input hidden id="Teams" value="@ViewBag.Teams" />
+            <input hidden id="IdFoodballer" value="@(Model != null ? Model.Id.ToString():"")" />
+            <input type="submit" value="Сохранить" class="btn btn-success" />
+        </form>
+    </div>
+</main>
+<script>
+    window.onload = () => {
+        let valueCountry = document.getElementById('ValueCountry').value;
+        let countries = ["Россия", "США", "Италия"];
+        let selectCountry = document.getElementById('Country');
+
+        for (let country of countries) {
+            let element = document.createElement('option');
+            element.value = country;
+            element.innerHTML = country;
+            if (country == valueCountry) {
+                element.selected = true;
+            }
+            selectCountry.appendChild(element);
+        }
+
+        let valueTeam = document.getElementById('ValueTeam').value;
+        let teams = JSON.parse(document.getElementById('Teams').value);
+        let selectTeam = document.getElementById('SelectTeam');
+        for (let team of teams) {
+            let element = document.createElement('option');
+            element.value = team;
+            element.innerHTML = team;
+            if (team == valueTeam) {
+                element.selected = true;
+            }
+
+            selectTeam.appendChild(element);
+        }
+    };
+
+    document.getElementById('SelectTeam').addEventListener('change', (e) => {
+        if (e.target.value == "none") {
+            document.getElementById('NewTeam').removeAttribute('style');
+            document.getElementById('Team').setAttribute('required', true);
+        }
+        else {
+            document.getElementById('NewTeam').style.display = 'none';
+            document.getElementById('Team').removeAttribute('required');
+        }
+    });
+
+    document.getElementById('formPerson').addEventListener('submit', (e) => {
+        e.preventDefault();
+        let person = {
+            Id: document.getElementById('IdFoodballer').value != "" ? document.getElementById('IdFoodballer').value: "0",
+            FirstName: document.getElementById('FirstName').value,
+            LastName: document.getElementById('LastName').value,
+            Gender: document.getElementById('male').checked ? document.getElementById('male').value : document.getElementById('female').value,
+            BirthDate: document.getElementById('BirthDate').value,
+            NameTeam: document.getElementById('SelectTeam').value == "none" ? document.getElementById('Team').value : document.getElementById('SelectTeam').value,
+            Country: document.getElementById('Country').value
+        }
+        $.ajax({
+            url: '/Home/SaveItem',
+            method: 'POST',
+            dataType: 'json',
+            data: 'footBaller= ' + JSON.stringify(person),
+            success: function (data) {
+                if (data.status == "OK") {
+                    console.log(data);
+                    //window.location.href = "/Home/Index";
+                }
+            },
+            error: function (data) {
+                console.log(data);
+                alert(data.error);
+            }
+        });
+    })
+
+</script>
